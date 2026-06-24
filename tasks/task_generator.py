@@ -1,7 +1,7 @@
 import random
-from .state import World, Email, DriveFile, Attachment, Task
-from .checks import run_verifier
-from .content import EMAIL_CONTENT, FILE_CONTENT
+from workspace.state import World, Email, DriveFile, Attachment, Task
+from tasks.checks import run_verifier
+from tasks.content import EMAIL_CONTENT, FILE_CONTENT
 
 # These imports are purely functions and classes we have built in other files that are crucial for building up the tasks. This includes
 # the World class, Email class, DriveFile class, Attachment class and Task class. We also have the run_verifier check and the random library.

@@ -1,5 +1,5 @@
 from enum import Enum
-from .state import World, Email, DriveFile, Attachment
+from workspace.state import World, Email, DriveFile, Attachment
 from typing import Any
 
 # We are importing Enum because we use it to define a fixed, closed list of every legal action name rather than raw, 

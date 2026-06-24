@@ -1,4 +1,4 @@
-from .state import World
+from workspace.state import World
 
 def file_in_folder(world, params):
     return any(f.content == params["content"] and f.folder_path == params["folder_path"] 
@@ -18,7 +18,7 @@ def file_id_in_folder(world, params):
 
 def no_collateral_moves(world, params):
     allowed = set(params["allowed_files"])
-    for file_id, orignal_folder in params["original_locations"].items():
+    for file_id, original_folder in params["original_locations"].items():
         if file_id in allowed:
             continue
         f = world.get_file(file_id)

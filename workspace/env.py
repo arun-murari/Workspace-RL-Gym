@@ -1,8 +1,8 @@
 import gymnasium as gym
 from gymnasium import spaces
-from .state import World
-from .operations import execute_action
-from .checks import run_verifier
+from workspace.state import World
+from workspace.operations import execute_action
+from tasks.checks import run_verifier
 
 # We import gymnasium because it is what helps us build up the environment and the loop of actions. Spaces allows us 
 # to define what the observation and action space to be where as the World and execute_action imports are things we already built
@@ -89,6 +89,6 @@ class WorkspaceEnv(gym.Env):
 
     def _compute_completion_reward(self) -> float:
         result = run_verifier(self.task.goal_spec, self.world)
-        return result.reward
+        return result["reward"]
 
     # This is the compute_completion reward function that updates the rewards of the task based on when we run the verification.
