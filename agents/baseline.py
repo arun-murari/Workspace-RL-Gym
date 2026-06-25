@@ -93,6 +93,12 @@ class ScriptedOracleBaseline(Agent):
             elif check == "answer_matches":         
                 plan.append({"type": "done", "params": {"answer": p["expected"]}})
 
+            elif check == "summary_in_folder":
+                plan.append({"type": "create_file",
+                            "params": {"name": "summary.txt",
+                                       "content": "Summary: " + "; ".join(p["must_include"]),
+                                       "folder_path": p["folder_path"]}})
+
         return plan
 
 # We return plan at the end. The general idea of this file is that we are building a scripted oracle agent where the agent

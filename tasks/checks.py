@@ -125,6 +125,18 @@ def no_files_created(world, params):
 
 # Checks if no new random files have not been created
 
+def summary_in_folder(world, params):
+    for f in world.files.values():
+        if f.file_id == params.get("exclude_file_id"):
+            continue
+        if f.folder_path != params["folder_path"]:
+            continue
+        if all(fact.lower() in f.content.lower() for fact in params["must_include"]):
+            return True
+    return False
+
+# Checks if a summary file made is actually in the proper folder
+
 CHECKS = {
     "file_in_folder":          file_in_folder,
     "file_id_in_folder":       file_id_in_folder,
@@ -143,6 +155,7 @@ CHECKS = {
     "clarification_asked":     clarification_asked,
     "clarification_not_asked": clarification_not_asked,
     "answer_matches":          answer_matches,
+    "summary_in_folder":       summary_in_folder,
 }
 
 # This is just a dict referencing all the checks within this file.

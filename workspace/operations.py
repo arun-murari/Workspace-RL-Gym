@@ -258,6 +258,20 @@ def search_drive(params, state):
 # we return a not found message and if it does exist we define lines to be a list of the top 10 files with their folder id, path and name.
 # Has the same logic as search_email when it comes to showing the top 10 items because this encourages the agent to have more refined searches
 
+def create_file(params, state):
+    if not state.folder_exists(params["folder_path"]):
+        return f"Folder '{params['folder_path']}' does not exist.", invalid_action_penalty, False
+    new_id = state.next_id("file")
+    state.files[new_id] = DriveFile(
+        file_id=new_id, name=params["name"],
+        content=params["content"], folder_path=params["folder_path"],
+    )
+    return f"Created file {new_id} in {params['folder_path']}.", 0.0, False
+
+# This is the create_file operation. First we check if the folder path even exists and if it does not we return a not found message with a penalty.
+# Then we define a new file id, and then just creaet a new DriveFile object with the corresponding infromation and add it to the files dict in 
+# the world class.
+
 def open_file(params, state):
     f = state.get_file(params["file_id"])
     if f is None:

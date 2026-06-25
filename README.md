@@ -34,7 +34,7 @@ seen-vs-unseen generalization gap, and breakdowns by category and difficulty).
 | `tasks/content.py` | Curated content library with embedded, verifiable facts. |
 | `agents/agent.py` | The `Agent` interface the harness drives. |
 | `agents/baseline.py` | A scripted oracle baseline that demonstrates solvability. |
-| `rl/rl_env.py`, `rl/ppo.py` | The constrained RL slice and a PPO training run (20% → ~95%). |
+| `rl/rl_env.py`, `rl/ppo.py` | The constrained RL slice and a PPO training run (20% → ~94%). |
 | `harness/evaluate.py` | Runs an agent across the suite; emits JSONL logs + summary. |
 | `tests/test_integrity.py` | Anti-gaming attacks + adversarial state-integrity tests. |
 

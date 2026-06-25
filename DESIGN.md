@@ -131,8 +131,10 @@ makes the held-out split leak-free.
 
 - **Categories** rotate evenly by seed: `move`, `cross_app`, `archive`,
   `judgment_overshare`, `judgment_clarify`, `retrieval_fact`, `summary`,
-  `communication` (send with required content), `dedup` (delete the duplicate, keep one),
-  and `long_horizon` (find email → save attachment → reply, a chain with partial credit).
+  `communication` (retrieve a fact from an email and forward it), `dedup` (delete the
+  duplicate, keep one), `long_horizon` (find email → save attachment → reply, a chain with
+  partial credit), and `judgment_well_specified` (a clear request that must NOT trigger a
+  clarification — the guard half of the symmetric judgment pair).
 - **Difficulty is a knob, not a separate task.** `easy`/`medium`/`hard` set the number of
   distractor emails and files (3 / 8 / 15) and the vagueness of the instruction, so
   difficulty is a real parameter and success-vs-difficulty is measurable.
@@ -152,15 +154,19 @@ makes the held-out split leak-free.
 
 ## 5. RL Training Run
 
-The full environment is intentionally too sparse and high-dimensional for a quick RL run,
-so I isolated a tractable slice in `rl/rl_env.py`: a one-step retrieval task encoded as a
-66-dim vector (a task block plus five email blocks, one-hot encoded so categories carry no
-false ordering), with a `Discrete(5)` action and a dense +1/0 reward. The optimal policy is
-near-linear, so it is reliably learnable.
+The full environment's text observation and dict action space are not directly trainable,
+so `rl/rl_env.py` is a **constrained slice** of it: each episode builds a real `World` of
+five emails drawn from the real `EMAIL_CONTENT` library, frames it as a `retrieval_fact`
+task, and **scores the agent's choice through the real `run_verifier`** (via `answer_matches`
+on `world.done_answer`). The only RL-specific layer is an `encode` step that featurizes the
+actual emails into a 66-dim vector (task block + five email blocks, one-hot so categories
+carry no false ordering) with a `Discrete(5)` action. Episodes use distinct senders and
+content entries to keep the retrieval near-linearly separable and reliably learnable. PPO
+trains only on the vector; it never touches the `World` directly.
 
 `rl/ppo.py` is a PPO implementation (shared trunk, separate actor/critic heads, clipped
 objective, GAE-style returns) adapted from continuous control to discrete actions
-(`Categorical` policy). Training climbs from the **20% random baseline to ~95% success**
+(`Categorical` policy). Training climbs from the **20% random baseline to ~99% success**
 over 80 iterations (`learning_curve.png`). The critic loss trends down as the value network
 learns; the actor loss hovers near zero, which is expected for PPO (a sign-flipped policy
 objective over normalized advantages, not a conventional error) and indicates stable
