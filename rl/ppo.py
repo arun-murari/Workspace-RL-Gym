@@ -212,6 +212,8 @@ class ActorCritic(nn.Module):
             # Then we do optiimizer.zero_grad to reset the gradients to zero so that they do not accumulate and get added to newer gradients. Then we do total_loss.backward()
             # so it computes gradients for all parameters and then we step the optimizer so that it can continue the gradient descent.
 
+        return actor_loss.item(), critic_loss.item()
+
 if __name__ == "__main__":
     env = ConstrainedEnv()
     model = ActorCritic(state_dim=ConstrainedEnv.OBS_DIM,
@@ -221,12 +223,16 @@ if __name__ == "__main__":
     # Then the model is the ActorCritic netowrk we have built out using the state and action dimension from the constrainted environment.
 
     curve = []
+    actor_losses = []
+    critic_losses = []
     for iteration in range(80):
         states, actions, log_probs, rewards, values, dones = model.rollout(env, timesteps=2048)
         returns = model.compute_rtgs(rewards, dones)
-        model.learn(states, actions, log_probs, returns, values)
-        success_rate = sum(rewards) / len(rewards)   
+        a_loss, c_loss = model.learn(states, actions, log_probs, returns, values)  # now returns losses
+        success_rate = sum(rewards) / len(rewards)
         curve.append(success_rate)
+        actor_losses.append(a_loss)
+        critic_losses.append(c_loss)
 
     # For each step in the 80 iteration training loop we are save the states, actions, etc and then we have the model learn based on these outputs.
     # Then we define the success rate to be the sum of rewards over the lenghth and add that success rate to curve so we can see how the model is getting better
@@ -247,6 +253,17 @@ if __name__ == "__main__":
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.savefig("learning_curve.png", dpi=150, bbox_inches="tight")
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(actor_losses, linewidth=2, label="Actor (policy) loss")
+    plt.plot(critic_losses, linewidth=2, label="Critic (value) loss")
+    plt.xlabel("Training iteration")
+    plt.ylabel("Loss")
+    plt.title("PPO loss curves on constrained retrieval env")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.savefig("loss_curve.png", dpi=150, bbox_inches="tight")
+    plt.close()
 
     # After the training loop has finished we have a list called curve that contains the success rate at each iteration and we use matplotlib to plot this curve
     # to see how the RL policy gets more efficient.
