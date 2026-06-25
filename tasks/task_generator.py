@@ -241,6 +241,73 @@ def make_retrieval_by_fact(rng, world, planted, difficulty):
 # report the deadline. Submit your answer when done." The agent has to actually open the email, read the body, find the value, and report it via
 # done(answer=...). The goal_spec has a single positive, answer_matches, which checks the submitted answer equals the recorded fact value.
 
+def make_communication_task(rng, world, planted, difficulty):
+    recipient_name, recipient_addr = rng.choice(CONTACTS)
+    if not planted["emails"]:
+        return None
+    eid = rng.choice(planted["emails"])
+    facts = planted["email_facts"].get(eid)
+    if not facts:
+        return None
+    fact_value = rng.choice(list(facts.values()))
+    topic = world.get_email(eid).subject
+    instruction = (f"Send an email to {recipient_name.split()[0]} ({recipient_addr}) "
+                   f"about '{topic}'. Make sure to include this detail: {fact_value}.")
+    goal_spec = [
+        {"check": "email_sent_to", "kind": "positive",
+         "params": {"recipient": recipient_addr, "must_include": [fact_value]}},
+    ]
+    return instruction, goal_spec
+
+# This is the make_communication_task. We define reciptenet name and addr to be a random choice from the contacts and then eid is a random
+# email id we choose from the planted world. We also store the facts of that email in a variable, and choose a random fact within the dict
+# and then topic is the subject of the email. So the instruction of this task is to ask the agent to send an email about a specific topic
+# that includes a specific fact.
+ 
+ 
+def make_dedup_task(rng, world, planted, difficulty):
+    if not planted["files"]:
+        return None
+    fid = rng.choice(planted["files"])
+    original = world.get_file(fid)
+    dup_id = world.next_id("file")
+    world.files[dup_id] = DriveFile(dup_id, original.name, original.content, original.folder_path)
+    instruction = (f"There are two copies of '{original.name}' in {original.folder_path}. "
+                   f"Delete the duplicate so exactly one remains.")
+    goal_spec = [
+        {"check": "exactly_one_in_folder", "kind": "positive",
+         "params": {"content": original.content, "folder_path": original.folder_path,
+                    "expected_count": 1}},
+    ]
+    return instruction, goal_spec
+
+ # This is the make_dedup task where we define fid to be a random file id within the world and then original is the actual file based on that id
+ # and dup id is the next id available. We make the file corresponding to dup id the exact same as original besides the id and the goal of the task
+ # is to delete the duplicate.
+ 
+def make_long_horizon_task(rng, world, planted, difficulty):
+    if not planted["emails_with_attach"]:
+        return None
+    eid = rng.choice(planted["emails_with_attach"])
+    email = world.get_email(eid)
+    att = email.attachments[0]
+    dest = rng.choice(FOLDERS)
+    sender_name = next((n.split()[0] for n, a in CONTACTS if a == email.sender), email.sender)
+    instruction = (f"Find the email from {sender_name} about '{email.subject}'. "
+                   f"Save its attachment '{att.name}' into {dest}, then reply to confirm it was saved.")
+    goal_spec = [
+        {"check": "file_in_folder", "kind": "positive",
+         "params": {"content": att.content, "folder_path": dest}},
+        {"check": "reply_in_thread", "kind": "positive",
+         "params": {"thread_id": email.thread_id, "original_sender": email.sender,
+                    "must_include": ["saved"]}},
+    ]
+    return instruction, goal_spec
+
+# This is the long_horizon task, we choose a random email id from the emails that have an attachment, then get that email and store it in the 
+# corresponding variable. Then we save the attachment in att and define dest to be a random folder out of the choices. The goal of this specific task
+# is then to find the email of a specific sender, save the attachment of that email into a specific folder and then reply to confirm it was saved.
+
 INSTANTIATORS = {
     "move": make_move_task,
     "cross_app": make_cross_app_task,
@@ -249,6 +316,9 @@ INSTANTIATORS = {
     "judgment_clarify": make_judgment_clarify,
     "retrieval_fact": make_retrieval_by_fact,
     "summary": make_summary_task,
+    "communication": make_communication_task,
+    "dedup": make_dedup_task,
+    "long_horizon": make_long_horizon_task,
 }
 CATEGORIES = list(INSTANTIATORS.keys())
 

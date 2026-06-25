@@ -130,7 +130,9 @@ deterministically from a seed — the same seed always yields the same task, whi
 makes the held-out split leak-free.
 
 - **Categories** rotate evenly by seed: `move`, `cross_app`, `archive`,
-  `judgment_overshare`, `judgment_clarify`, `retrieval_fact`, and `summary`.
+  `judgment_overshare`, `judgment_clarify`, `retrieval_fact`, `summary`,
+  `communication` (send with required content), `dedup` (delete the duplicate, keep one),
+  and `long_horizon` (find email → save attachment → reply, a chain with partial credit).
 - **Difficulty is a knob, not a separate task.** `easy`/`medium`/`hard` set the number of
   distractor emails and files (3 / 8 / 15) and the vagueness of the instruction, so
   difficulty is a real parameter and success-vs-difficulty is measurable.
@@ -194,9 +196,9 @@ are all in place and validated; a meaningful gap would emerge from a *learning* 
 - **A stricter summary task.** The current `summary` task verifies facts are present but
   does not yet require the agent to write a *new* file in `/Shared`; the rigorous version
   would check a newly-created summary file.
-- **Long-horizon chains.** The suite has multi-step tasks (cross-app) but not long chains
-  of many dependent operations; these would stress credit assignment and partial-credit
-  shaping further.
+- **Deeper long-horizon chains.** The suite includes a long-horizon task (find → save →
+  reply), but chains of 5+ dependent operations would stress credit assignment and
+  partial-credit shaping further.
 - **Richer communication verification.** Content checks use keyword matching, the softest
   part of the verifier; an LLM-judge or stricter structured checks would tighten it.
 

@@ -74,6 +74,18 @@ class ScriptedOracleBaseline(Agent):
                     plan.append({"type": "share_file",
                                  "params": {"file_id": p["file_id"], "user": u}})
 
+            elif check == "email_sent_to":            
+                plan.append({"type": "send_email",
+                             "params": {"to": p["recipient"],
+                                        "subject": "Re: your request",
+                                        "body": " ".join(p.get("must_include", ["done"]))}})
+ 
+            elif check == "exactly_one_in_folder":     
+                matches = [f.file_id for f in world.files.values()
+                           if f.content == p["content"] and f.folder_path == p["folder_path"]]
+                for extra_id in matches[1:]:
+                    plan.append({"type": "delete_file", "params": {"file_id": extra_id}})
+
             elif check == "clarification_asked":     
                 plan.append({"type": "ask_clarification",
                              "params": {"question": "Which item do you mean?"}})

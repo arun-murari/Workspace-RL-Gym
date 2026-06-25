@@ -42,7 +42,8 @@ seen-vs-unseen generalization gap, and breakdowns by category and difficulty).
 
 `move`, `cross_app` (save attachment + reply), `archive`, `retrieval_fact` (read content
 and report a fact), `judgment_overshare` (share correctly without leaking),
-`judgment_clarify` (ask when underspecified), and `summary`.
+`judgment_clarify` (ask when underspecified), `summary`, `communication` (send with
+required content), `dedup` (delete the duplicate), and `long_horizon` (a multi-step chain).
 
 ## Key properties
 
