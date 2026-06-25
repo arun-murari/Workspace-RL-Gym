@@ -1,0 +1,14 @@
+class Agent:
+    """Base interface every agent implements. The harness drives any Agent through the
+    env by repeatedly calling act(observation, task) -> action until the episode ends.
+    Keeping this thin and uniform means evaluate.py can run ANY agent the same way."""
+
+    def reset(self, task):
+        """Called once at the start of an episode. Subclasses can use it to plan from the
+        task (instruction / goal_spec) before acting."""
+        pass
+
+    def act(self, observation, task):
+        """Given the current observation, return the next action dict
+        {"type": ..., "params": {...}}. Must be implemented by subclasses."""
+        raise NotImplementedError

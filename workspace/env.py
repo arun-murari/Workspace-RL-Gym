@@ -1,6 +1,6 @@
 import gymnasium as gym
 from gymnasium import spaces
-from workspace.state import World
+from workspace.state import World, Task
 from workspace.operations import execute_action
 from tasks.checks import run_verifier
 

@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
+from rl_env import ConstrainedEnv 
 
 class ActorCritic(nn.Module):
     def __init__(self, state_dim, action_dim, hidden_dim=256): # Pass in the dimension of the state and the action, and then make a hidden layer of dimension 64
