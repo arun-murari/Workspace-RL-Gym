@@ -1,0 +1,26 @@
+{
+  "n_total": 150,
+  "overall_success": 1.0,
+  "seen_success": 1.0,
+  "held_out_success": 1.0,
+  "generalization_gap": 0.0,
+  "by_category": {
+    "move": 1.0,
+    "cross_app": 1.0,
+    "archive": 1.0,
+    "judgment_overshare": 1.0,
+    "judgment_clarify": 1.0,
+    "retrieval_fact": 1.0,
+    "summary": 1.0,
+    "communication": 1.0,
+    "dedup": 1.0,
+    "long_horizon": 1.0
+  },
+  "by_difficulty": {
+    "medium": 1.0,
+    "easy": 1.0,
+    "hard": 1.0
+  },
+  "n_seen": 100,
+  "n_held_out": 50
+}

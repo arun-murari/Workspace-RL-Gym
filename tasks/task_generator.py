@@ -194,6 +194,23 @@ def make_judgment_clarify(rng, world, planted, difficulty):
 # blind action. This is one half of the symmetric pair: well-specified tasks instead guard against asking, so the agent must learn to ask only
 # when genuinely ambiguous.
 
+def make_judgment_well_specified(rng, world, planted, difficulty):
+    if not planted["files"]:
+        return None
+    fid = rng.choice(planted["files"])
+    f = world.get_file(fid)
+    dest = rng.choice([p for p in FOLDERS if p != f.folder_path])
+    instruction = (f"Move the file '{f.name}' (id {fid}) into {dest}. "
+                   f"This request is complete and unambiguous.")
+    goal_spec = [
+        {"check": "file_id_in_folder", "kind": "positive",
+         "params": {"file_id": fid, "folder_path": dest}},
+        {"check": "clarification_not_asked", "kind": "guard", "params": {}},
+    ]
+    return instruction, goal_spec
+
+# Makes sure that a clarificaiton is not asked because the task is completetly eligible and able to be completed.
+ 
 def make_summary_task(rng, world, planted, difficulty):
     candidates = [fid for fid in planted["files"] if planted["file_facts"].get(fid)]
     if not candidates:
@@ -202,20 +219,22 @@ def make_summary_task(rng, world, planted, difficulty):
     f = world.get_file(fid)
     facts = planted["file_facts"][fid]
     required = list(facts.values())[:2]
-    instruction = (f"Read the file '{f.name}' and create a summary note in /Shared that includes "
+    instruction = (f"Read the file '{f.name}' and create a NEW summary note in /Shared that includes "
                    f"its key figures. The summary must mention: {', '.join(required)}.")
     goal_spec = [
-        {"check": "file_has_content", "kind": "positive",
-         "params": {"file_id": fid, "must_include": required}},
+        {"check": "summary_in_folder", "kind": "positive",
+         "params": {"folder_path": "/Shared", "must_include": required,
+                    "exclude_file_id": fid}},
+        {"check": "no_collateral_moves", "kind": "guard",
+         "params": {"allowed_files": [fid],
+                    "original_locations": dict(planted["original_locations"])}},
     ]
     return instruction, goal_spec
 
-# This is the make_summary_task, a multi-step composition task. It takes the same four arguments. First we find files that actually have
-# recorded facts, returning None if there are none. Then we choose one, get the file, grab its facts, and take the two most important ones. The
-# instruction is e.g. "Read the file 'q3_budget.xlsx' and create a summary note in /Shared that includes its key figures. The summary must
-# mention: $327,000, $180K." The goal_spec has a positive, file_has_content, which checks those facts are present.
-# NOTE: this is the weakest task. As written it checks the SOURCE file still has the facts, which it always does, so it is not yet rigorous. A
-# proper version would check that a NEW file in /Shared contains the facts, proving the agent actually wrote a summary. Tighten before relying on it.
+# This is the make_summary task we define candidates to be a list of all the file ids with file facts, then we choose a random file id
+# out of all of those and define f to be the file corresponding to that random file id. Then we define facts to be the facts corresponding to that file
+# and define required to be most of the facts for that specifc task and instruct the agent to creat a new summary file in the Shared folder that
+# includes those key facts. 
 
 def make_retrieval_by_fact(rng, world, planted, difficulty):
     if not planted["emails"]:
@@ -243,27 +262,26 @@ def make_retrieval_by_fact(rng, world, planted, difficulty):
 
 def make_communication_task(rng, world, planted, difficulty):
     recipient_name, recipient_addr = rng.choice(CONTACTS)
-    if not planted["emails"]:
+    candidates = [eid for eid in planted["emails"] if planted["email_facts"].get(eid)]
+    if not candidates:
         return None
-    eid = rng.choice(planted["emails"])
-    facts = planted["email_facts"].get(eid)
-    if not facts:
-        return None
-    fact_value = rng.choice(list(facts.values()))
-    topic = world.get_email(eid).subject
-    instruction = (f"Send an email to {recipient_name.split()[0]} ({recipient_addr}) "
-                   f"about '{topic}'. Make sure to include this detail: {fact_value}.")
+    eid = rng.choice(candidates)
+    email = world.get_email(eid)
+    facts = planted["email_facts"][eid]
+    fact_key = rng.choice(list(facts.keys()))
+    fact_value = facts[fact_key]
+    instruction = (f"Find the email about '{email.subject}', then forward its "
+                   f"{fact_key.replace('_',' ')} to {recipient_name.split()[0]} ({recipient_addr}).")
     goal_spec = [
         {"check": "email_sent_to", "kind": "positive",
          "params": {"recipient": recipient_addr, "must_include": [fact_value]}},
     ]
     return instruction, goal_spec
-
+ 
 # This is the make_communication_task. We define reciptenet name and addr to be a random choice from the contacts and then eid is a random
 # email id we choose from the planted world. We also store the facts of that email in a variable, and choose a random fact within the dict
 # and then topic is the subject of the email. So the instruction of this task is to ask the agent to send an email about a specific topic
 # that includes a specific fact.
- 
  
 def make_dedup_task(rng, world, planted, difficulty):
     if not planted["files"]:

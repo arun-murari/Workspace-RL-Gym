@@ -104,8 +104,8 @@ class ConstrainedEnv(gym.Env):
 
         self.target = self.py_rng.randint(0, self.N_EMAILS - 1)
         target_eid, target_entry, target_sender = email_ids[self.target]
-        fact_key = self.py_rng.choice(list(target_entry["facts"].keys()))
-        self.target_fact = target_entry["facts"][fact_key]
+        self.fact_key = self.py_rng.choice(list(target_entry["facts"].keys()))
+        self.target_fact = target_entry["facts"][self.fact_key]
         target_keyword = EMAIL_CONTENT.index(target_entry) % self.N_KEYWORDS
 
         # We pick a random target email out of the 5 and pull out its id, entry and sender. Then we choose a random fact from that email's facts dict to be the thing we ask for,
@@ -152,14 +152,11 @@ class ConstrainedEnv(gym.Env):
 
         # We look up the email the agent actually chose using the action as an index.
 
-        if action == self.target:
-            self.world.done_answer = self.target_fact
-        else:
-            chosen_facts = list(chosen_entry["facts"].values())
-            self.world.done_answer = chosen_facts[0] if chosen_facts else ""
+        self.world.done_answer = chosen_entry["facts"].get(self.fact_key, "")
 
-        # If the agent picked the right email we set done_answer to the target fact, which will match. If it picked a wrong email we set done_answer to that wrong email's fact,
-        # which will not match the expected one. Either way we are setting done_answer exactly like the real done operation does.
+        # The key point is that correctness is decided entirely by the verifier, not by us. We hand it the chosen email's fact and run_verifier compares it to the expected
+        # target fact via answer_matches. If the agent chose the right email those match and reward is 1, otherwise they differ and reward is 0. The reward is genuinely
+        # produced by our real verifier, not a hand written comparison.
 
         reward = run_verifier(self.task_goal, self.world)["reward"]
         return self.obs, reward, True, False, {"target": self.target}

@@ -36,6 +36,7 @@ class ActionType(str, Enum):
     RENAME_FILE = "rename_file"
     DELETE_FILE = "delete_file"
     CREATE_FOLDER = "create_folder"
+    CREATE_FILE = "create_file"
     SHARE_FILE = "share_file"
 
     # These are writing based actions relating to files and folders
@@ -60,6 +61,7 @@ REQUIRED_PARAMS: dict[ActionType, list] = {
     ActionType.RENAME_FILE:      ["file_id", "new_name"],
     ActionType.DELETE_FILE:      ["file_id"],
     ActionType.CREATE_FOLDER:    ["path"],
+    ActionType.CREATE_FILE:      ["name", "content", "folder_path"],
     ActionType.SHARE_FILE:       ["file_id", "user"],
     ActionType.SAVE_ATTACHMENT:  ["email_id", "attachment_id", "dest_path"],
     ActionType.ASK_CLARIFICATION:["question"],
@@ -110,6 +112,7 @@ def execute_action(action: dict[str, Any], world: World) -> tuple[str, float, bo
         ActionType.RENAME_FILE:       rename_file,
         ActionType.DELETE_FILE:       delete_file,
         ActionType.CREATE_FOLDER:     create_folder,
+        ActionType.CREATE_FILE:       create_file,
         ActionType.SHARE_FILE:        share_file,
         ActionType.SAVE_ATTACHMENT:   save_attachment,
         ActionType.ASK_CLARIFICATION: ask_clarification,
