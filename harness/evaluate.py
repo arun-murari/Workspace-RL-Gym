@@ -31,20 +31,39 @@ def run_episode(agent, task, step_budget=20):
     # We define a empty list called trajectory to store what each action output, define the total reward to be 0 and then define terminated
     # and truncated to both be False because the task is not done and the step budget is not exceeded. 
 
+    step_idx = 0
     while not (terminated or truncated):
         action = agent.act(obs, task)
         obs, reward, terminated, truncated, info = env.step(action)
         total_reward += reward
+
+        step_verifier = run_verifier(task.goal_spec, env.world)
+        step_checks = [
+            {"check": r["check"], "kind": r["kind"], "passed": r["passed"]}
+            for r in step_verifier["predicate_results"]
+        ]
+
         trajectory.append({
+            "step": step_idx,
             "action": action,
             "reward": round(reward, 4),
             "terminated": terminated,
             "truncated": truncated,
+            "checks": step_checks,
         })
+        step_idx += 1
 
     # While both terminated or truncated are False, we define the action to be based on whatever the agents act function is, and then we define
     # obs, reward, terminated and truncated to be the output of the env.step(action). We update the total reward and then add this actions outputs
-    # to the trajectory list.
+    # to the trajectory list. Per-step checks are captured for tracing but do not affect reward.
+
+    all_check_names = [c["check"] for c in (trajectory[0]["checks"] if trajectory else [])]
+    check_timeline = {name: None for name in all_check_names}
+    for step_entry in trajectory:
+        for c in step_entry["checks"]:
+            name = c["check"]
+            if check_timeline.get(name) is None and c["passed"]:
+                check_timeline[name] = step_entry["step"]
 
     verifier = run_verifier(task.goal_spec, env.world)
     return {
@@ -59,6 +78,7 @@ def run_episode(agent, task, step_budget=20):
         "predicate_results": verifier["predicate_results"],
         "trajectory": trajectory,
         "n_steps": len(trajectory),
+        "check_timeline": check_timeline,
     }
 
     # Then we run verifier with the tasks goal spec and then current world. Then we return one big dict containing seed, category of the task, difficulty, and whether

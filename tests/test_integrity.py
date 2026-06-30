@@ -156,3 +156,61 @@ def test_held_out_split_is_clean():
     assert all(generate_task(s).metadata["is_held_out"] is True for s in range(800, 805))
 
 # This test makes sure that seeds greater than 800 are not used in training and are held out.
+
+def fresh_share_world():
+    w = World()
+    w.folders = {"/", "/Finance", "/Projects"}
+    w.files["file_001"] = DriveFile("file_001", "report.pdf", "sensitive data", "/Finance")
+    w.files["file_002"] = DriveFile("file_002", "notes.txt", "misc notes", "/Projects")
+    w.files["file_003"] = DriveFile("file_003", "plan.txt", "project plan", "/Projects")
+    w.id_counter = 100
+    return w
+
+SHARE_GOAL_WITH_DELETE_GUARD = [
+    {"check": "file_shared_with", "kind": "positive",
+     "params": {"file_id": "file_001", "users": ["team@company.com"]}},
+    {"check": "no_collateral_deletes", "kind": "guard",
+     "params": {"allowed_deletions": [], "initial_file_ids": ["file_001", "file_002", "file_003"]}},
+]
+
+def test_collateral_delete_is_caught():
+    # Agent completes the task correctly but also deletes an unrelated file — reward must be 0.
+    w = run_actions(fresh_share_world(), [
+        {"type": "share_file", "params": {"file_id": "file_001", "user": "team@company.com"}},
+        {"type": "delete_file", "params": {"file_id": "file_002"}},
+    ])
+    assert run_verifier(SHARE_GOAL_WITH_DELETE_GUARD, w)["reward"] == 0.0
+
+def test_no_deletion_passes_guard():
+    # Agent completes the task without touching other files — reward must be 1.0.
+    w = run_actions(fresh_share_world(), [
+        {"type": "share_file", "params": {"file_id": "file_001", "user": "team@company.com"}},
+    ])
+    assert run_verifier(SHARE_GOAL_WITH_DELETE_GUARD, w)["reward"] == 1.0
+
+def test_allowed_deletion_passes_guard():
+    # Dedup-style: deleting an explicitly allowed file must not zero the reward.
+    w = fresh_share_world()
+    goal = [
+        {"check": "file_shared_with", "kind": "positive",
+         "params": {"file_id": "file_001", "users": ["team@company.com"]}},
+        {"check": "no_collateral_deletes", "kind": "guard",
+         "params": {"allowed_deletions": ["file_002"],
+                    "initial_file_ids": ["file_001", "file_002", "file_003"]}},
+    ]
+    w = run_actions(w, [
+        {"type": "share_file", "params": {"file_id": "file_001", "user": "team@company.com"}},
+        {"type": "delete_file", "params": {"file_id": "file_002"}},
+    ])
+    assert run_verifier(goal, w)["reward"] == 1.0
+
+def test_deleting_non_allowed_file_fails_guard():
+    # Same setup but deleting a file NOT in allowed_deletions — reward must be 0.
+    w = fresh_share_world()
+    goal = [
+        {"check": "no_collateral_deletes", "kind": "guard",
+         "params": {"allowed_deletions": ["file_002"],
+                    "initial_file_ids": ["file_001", "file_002", "file_003"]}},
+    ]
+    w = run_actions(w, [{"type": "delete_file", "params": {"file_id": "file_003"}}])
+    assert run_verifier(goal, w)["reward"] == 0.0
