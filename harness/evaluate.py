@@ -16,7 +16,7 @@ LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
 
 # This line allows for access to a log folder that we create to store all the logs in
 
-def run_episode(agent, task, step_budget=20):
+def run_episode(agent, task, step_budget=20, agent_mode="oracle"):
     env = WorkspaceEnv(task, step_budget=step_budget)
     obs, _ = env.reset()
     agent.reset(task)
@@ -50,6 +50,7 @@ def run_episode(agent, task, step_budget=20):
             "terminated": terminated,
             "truncated": truncated,
             "checks": step_checks,
+            "last_result": env.last_result,
         })
         step_idx += 1
 
@@ -72,6 +73,7 @@ def run_episode(agent, task, step_budget=20):
         "difficulty": task.metadata["difficulty"],
         "is_held_out": task.metadata["is_held_out"],
         "instruction": task.instruction,
+        "agent_mode": agent_mode,
         "total_reward": round(total_reward, 4),
         "completion_reward": verifier["reward"],
         "success": verifier["reward"] == 1.0,
@@ -86,7 +88,7 @@ def run_episode(agent, task, step_budget=20):
     # that is basically a dict of checks, trajectory and then the number of steps taken which is length of trajectory list.
 
 def evaluate(agent=None, train_seeds=range(0, 100), held_out_seeds=range(800, 850),
-             step_budget=20):
+             step_budget=20, agent_mode="oracle"):
     if agent is None:
         agent = ScriptedOracleBaseline()
     os.makedirs(LOG_DIR, exist_ok=True)
@@ -98,7 +100,7 @@ def evaluate(agent=None, train_seeds=range(0, 100), held_out_seeds=range(800, 85
     with open(log_path, "w") as f:
         for seed in list(train_seeds) + list(held_out_seeds):
             task = generate_task(seed)
-            rec = run_episode(agent, task, step_budget)
+            rec = run_episode(agent, task, step_budget, agent_mode=agent_mode)
             records.append(rec)
             f.write(json.dumps(rec) + "\n")
 
